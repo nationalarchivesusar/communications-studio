@@ -1,9 +1,5 @@
 /* Communications policy/UI refinements. Loaded last. */
 
-/* The configured site name now includes Roblox; avoid the older pseudo suffix. */
-.masthead-kicker::after,
-.topbar-title > span::after { content: "" !important; }
-
 /* Give the center workspace the whole center column. */
 .preview-stage {
   padding: 0 !important;
