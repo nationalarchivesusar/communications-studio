@@ -1,50 +1,59 @@
 "use strict";
   function renderLogin() {
     app.innerHTML = `
-      <main class="login-shell">
-        <section class="login-hero">
-          <div class="login-brand">
-            <div class="brand-lockup">
-              <div class="brand-mark">US</div>
-              <div>
-                <div class="brand-kicker">Government Communications</div>
-                <div class="brand-name">Communications Studio</div>
-              </div>
+      <main class="login-shell federal-login">
+        <header class="federal-masthead">
+          <div class="masthead-inner">
+            <div class="masthead-kicker">United States of America</div>
+            <div class="masthead-title">Communications Studio</div>
+            <div class="masthead-agency">National Archives and Records Administration</div>
+          </div>
+        </header>
+
+        <section class="login-content">
+          <div class="login-intro">
+            <div class="section-kicker">Government Communications</div>
+            <h1>Communications Studio</h1>
+            <p>Create, edit, and preview Discord Components V2 announcements for official USAR communications.</p>
+            <p class="login-secondary">Access and publishing permissions will be determined from your connected Discord and Roblox accounts when the backend is enabled.</p>
+
+            <div class="login-information">
+              <div><strong>Builder</strong><span>Compose Containers, Sections, Text Displays, media, files, buttons, and select menus.</span></div>
+              <div><strong>Preview</strong><span>View the announcement as it will appear in Discord while you edit it.</span></div>
+              <div><strong>Drafts</strong><span>Work in progress is saved locally in this browser.</span></div>
             </div>
           </div>
-          <div class="login-copy">
-            <h1>Official communications, built with precision.</h1>
-            <p>Compose responsive Discord Components V2 announcements in a purpose-built government publishing workspace. Identity and publishing permissions will be derived from your connected accounts.</p>
-            <div class="login-points">
-              <div class="login-point"><strong>Discord-native</strong>Build against the current Components V2 message structure.</div>
-              <div class="login-point"><strong>Live preview</strong>See the announcement update while you compose it.</div>
-              <div class="login-point"><strong>Local autosave</strong>Your in-progress builder state survives refreshes on this device.</div>
-            </div>
-          </div>
-          <div class="login-footer">Maintained by the National Archives and Records Administration • ${esc(CONFIG.guildName)}</div>
-        </section>
-        <aside class="login-panel-wrap">
-          <div class="login-panel">
-            <h2>Sign in</h2>
-            <p class="lede">Connect an official account to enter Communications Studio. The backend will use these identities to resolve Discord roles and Roblox membership.</p>
-            <button class="auth-button discord" data-action="auth-discord">
-              <span class="auth-icon">${discordLogo()}</span>
-              <span class="auth-copy">Continue with Discord<small>Server roles and publishing permissions</small></span>
-            </button>
-            <button class="auth-button roblox" data-action="auth-roblox">
-              <span class="auth-icon">${robloxLogo()}</span>
-              <span class="auth-copy">Continue with Roblox<small>Optional linked game identity</small></span>
-            </button>
-            ${CONFIG.enablePreviewAccess ? `
-              <div class="auth-divider">Frontend preview</div>
-              <button class="auth-button preview" data-action="auth-preview">
-                <span class="auth-icon">${icon("message")}</span>
-                <span class="auth-copy">Open Builder Preview<small>No publishing access • browser-local session</small></span>
+
+          <aside class="login-panel-wrap">
+            <div class="login-panel">
+              <div class="section-kicker">Access Communications Studio</div>
+              <h2>Sign in</h2>
+              <p class="lede">Use an official account to continue.</p>
+
+              <button class="auth-button discord" data-action="auth-discord">
+                <span class="auth-icon">${discordLogo()}</span>
+                <span class="auth-copy">Sign in with Discord<small>Server roles and permissions</small></span>
               </button>
-            ` : ""}
-            <div class="auth-note">For production, sign-in persistence should be handled by the backend with rotating server-side sessions. Provider access and refresh tokens should never be stored in this page or in localStorage.</div>
-          </div>
-        </aside>
+
+              <button class="auth-button roblox" data-action="auth-roblox">
+                <span class="auth-icon">${robloxLogo()}</span>
+                <span class="auth-copy">Sign in with Roblox<small>Roblox identity</small></span>
+              </button>
+
+              ${CONFIG.enablePreviewAccess ? `
+                <div class="auth-divider"><span>Frontend preview</span></div>
+                <button class="auth-button preview" data-action="auth-preview">
+                  <span class="auth-icon">${icon("message")}</span>
+                  <span class="auth-copy">Open Builder Preview<small>No publishing access</small></span>
+                </button>
+              ` : ""}
+
+              <div class="auth-note">Production sign-in will use secure server-side sessions. Provider credentials will not be stored in the browser.</div>
+            </div>
+          </aside>
+        </section>
+
+        <footer class="login-footer">Maintained by the National Archives and Records Administration · ${esc(CONFIG.guildName)}</footer>
       </main>`;
   }
 
@@ -78,8 +87,7 @@
     const subtitle = session?.provider ? `${session.provider} session` : "Frontend preview";
     return `
       <header class="topbar">
-        <div class="brand-mark">US</div>
-        <div class="topbar-title"><strong>Communications Studio</strong><span>${esc(CONFIG.guildName)}</span></div>
+        <div class="topbar-title"><span>United States of America</span><strong>Communications Studio</strong></div>
         <div class="topbar-separator"></div>
         <div class="save-state" data-save-state><span class="save-dot"></span>Saved locally</div>
         <div class="topbar-spacer"></div>
