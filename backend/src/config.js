@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import path from 'node:path';
 
 function int(value, fallback) {
@@ -53,14 +54,8 @@ export const config = Object.freeze({
 
 export function validateRuntimeConfig() {
   const problems = [];
-  if (!config.discord.clientId || !config.discord.clientSecret || !config.discord.guildId) {
-    problems.push('Discord OAuth is not fully configured.');
-  }
-  if (!config.roblox.clientId || !config.roblox.clientSecret) {
-    problems.push('Roblox OAuth is not fully configured.');
-  }
-  if (config.cookieSameSite === 'none' && !config.cookieSecure) {
-    problems.push('SameSite=None cookies require COOKIE_SECURE=true in browsers.');
-  }
+  if (!config.discord.clientId || !config.discord.clientSecret || !config.discord.guildId) problems.push('Discord OAuth is not fully configured.');
+  if (!config.roblox.clientId || !config.roblox.clientSecret) problems.push('Roblox OAuth is not fully configured.');
+  if (config.cookieSameSite === 'none' && !config.cookieSecure) problems.push('SameSite=None cookies require COOKIE_SECURE=true in browsers.');
   return problems;
 }
