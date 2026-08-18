@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   audit:
@@ -20,6 +20,19 @@ jobs:
 
       - name: Run recursive Roblox ally/role audit
         run: python3 scripts/roblox_org_audit.py
+
+      - name: Save audit snapshot in repository
+        run: |
+          mkdir -p data
+          cp audit-output/roblox-org-audit.json data/roblox-org-audit.json
+          cp audit-output/roblox-org-audit.md data/roblox-org-audit.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/roblox-org-audit.json data/roblox-org-audit.md
+          if ! git diff --cached --quiet; then
+            git commit -m "Update Roblox organization audit"
+            git push
+          fi
 
       - name: Upload audit results
         uses: actions/upload-artifact@v4
