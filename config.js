@@ -11,6 +11,6 @@ window.COMMUNICATIONS_STUDIO_CONFIG = Object.freeze({
   sessionPath: "/auth/session",
   logoutPath: "/auth/logout",
   enablePreviewAccess: true,
-  guildName: "United States of America",
+  guildName: "United States of America Roblox",
   docsUrl: "https://docs.discord.com/developers/components/reference"
 });
