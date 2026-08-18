@@ -1,0 +1,231 @@
+/* Builder scale + NARA identity refinements. Loaded after the federal utility theme. */
+
+:root {
+  --sidebar: 360px;
+  --inspector: 420px;
+  --header-h: 82px;
+  --mobile-tabs-h: 52px;
+}
+
+/* NARA mark from the existing U.S. Code site. */
+.topbar::before,
+.masthead-inner::before {
+  content: "";
+  display: block;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  background: url("https://raw.githubusercontent.com/nationalarchivesusar/us-code/main/assets/images/nara.png") center / contain no-repeat;
+}
+
+.topbar::before { margin-right: 2px; }
+
+.masthead-inner {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  column-gap: 18px;
+  align-items: center;
+}
+.masthead-inner::before {
+  grid-column: 1;
+  grid-row: 1 / 4;
+  width: 62px;
+  height: 62px;
+}
+.masthead-kicker,
+.masthead-title,
+.masthead-agency { grid-column: 2; }
+.masthead-kicker { grid-row: 1; }
+.masthead-title { grid-row: 2; }
+.masthead-agency { grid-row: 3; }
+
+/* The JS currently says “United States of America”; append the actual Roblox name. */
+.masthead-kicker::after,
+.topbar-title > span::after { content: " Roblox"; }
+
+/* Builder header */
+.topbar {
+  padding: 0 20px;
+  gap: 16px;
+}
+.topbar-title { min-width: 270px; }
+.topbar-title span {
+  font-size: 10px;
+  line-height: 1.15;
+  letter-spacing: .11em;
+}
+.topbar-title strong {
+  font-size: 23px;
+  line-height: 1.08;
+}
+.topbar-separator { height: 42px; }
+.save-state { font-size: 12px; }
+.save-dot { width: 8px; height: 8px; }
+.toolbar-btn,
+.icon-btn {
+  min-height: 40px;
+  font-size: 12px;
+}
+.toolbar-btn { padding: 0 14px; }
+.icon-btn { width: 40px; }
+.toolbar-btn svg,
+.icon-btn svg { width: 17px; height: 17px; }
+.user-avatar { width: 36px; height: 36px; font-size: 12px; }
+.user-copy { max-width: 180px; }
+.user-copy strong { font-size: 12px; }
+.user-copy span { font-size: 10px; }
+
+/* Main builder layout */
+.studio-grid {
+  grid-template-columns: var(--sidebar) minmax(520px, 1fr) var(--inspector);
+}
+.panel-header {
+  height: 54px;
+  padding: 0 16px;
+}
+.panel-title { font-size: 12px; letter-spacing: .075em; }
+.panel-subtitle { font-size: 11px; }
+
+/* Structure panel */
+.structure-scroll { padding: 16px 13px 90px; }
+.structure-toolbar { gap: 9px; margin-bottom: 16px; }
+.add-container-btn {
+  min-height: 42px;
+  padding: 0 13px;
+  font-size: 12px;
+}
+.structure-stat {
+  min-width: 72px;
+  padding: 5px 9px;
+}
+.structure-stat strong { font-size: 14px; }
+.structure-stat span { font-size: 9px; }
+.tree-root,
+.tree-container { margin-bottom: 10px; }
+.tree-item {
+  min-height: 44px;
+  gap: 9px;
+  padding: 6px 9px;
+}
+.tree-icon { width: 27px; height: 27px; }
+.tree-icon svg { width: 15px; height: 15px; }
+.drag-handle { width: 16px; font-size: 15px; }
+.tree-copy strong { font-size: 12px; }
+.tree-copy span { margin-top: 2px; font-size: 10px; }
+.tree-children { margin-left: 24px; padding-left: 10px; }
+.mini-action { width: 31px; height: 31px; }
+.mini-action svg { width: 14px; height: 14px; }
+.add-component-wrap { margin: 9px 0 11px 34px; }
+.add-component-btn { min-height: 38px; font-size: 12px; }
+.empty-state { padding: 38px 20px; font-size: 13px; }
+
+/* Preview controls/workspace — not the Discord message itself. */
+.preview-toolbar {
+  min-height: 54px;
+  padding: 0 16px;
+  gap: 10px;
+}
+.preview-meta { font-size: 11px; }
+.segmented button {
+  height: 34px;
+  min-width: 42px;
+  padding: 0 11px;
+  font-size: 11px;
+}
+.preview-stage { padding: clamp(28px, 4vw, 52px); }
+.preview-warning { font-size: 10px; line-height: 1.5; }
+
+/* Properties panel */
+.inspector-scroll { padding: 18px 18px 100px; }
+.inspector-heading { font-size: 20px; margin-bottom: 3px; }
+.inspector-type { font-size: 11px; margin-bottom: 20px; }
+.field-group { margin-bottom: 19px; }
+.field-label { margin-bottom: 7px; font-size: 12px; }
+.field-label small { font-size: 10px; }
+.field-help { margin-top: 6px; font-size: 11px; line-height: 1.5; }
+.text-input,
+.select-input,
+.number-input {
+  height: 42px;
+  padding: 9px 11px;
+  font-size: 13px;
+}
+.text-area {
+  min-height: 154px;
+  padding: 10px 11px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.field-row { gap: 10px; }
+.toggle-line { min-height: 44px; padding: 9px 11px; }
+.toggle-copy strong { font-size: 12px; }
+.toggle-copy span { font-size: 10px; }
+.markdown-tools { gap: 5px; margin-bottom: 8px; }
+.markdown-tool { min-width: 34px; height: 32px; padding: 0 8px; font-size: 11px; }
+.inspector-card,
+.select-option-card { padding: 13px; margin-bottom: 14px; }
+.inspector-card-head strong { font-size: 12px; }
+.add-inline-btn { height: 38px; font-size: 12px; }
+.danger-button { height: 42px; font-size: 12px; }
+.validation-box { padding: 11px; font-size: 11px; line-height: 1.5; }
+.validation-box strong { font-size: 12px; }
+.color-field { grid-template-columns: 48px 1fr; }
+.color-swatch { width: 48px; height: 42px; }
+
+/* Component picker and dialogs */
+.picker-grid { gap: 10px; }
+.picker-item { min-height: 102px; padding: 15px; }
+.picker-item .picker-icon { width: 34px; height: 34px; }
+.picker-item strong { font-size: 12px; }
+.picker-item span { font-size: 10px; line-height: 1.4; }
+.modal-header { min-height: 64px; }
+.modal-header h2 { font-size: 18px; }
+.modal-body { padding: 20px; }
+.modal-footer { min-height: 64px; }
+.btn { min-height: 40px; padding: 0 15px; font-size: 12px; }
+.code-output { font-size: 12px; line-height: 1.55; }
+.toast { font-size: 12px; }
+
+/* Login header gets the same identity treatment and slightly larger type. */
+.masthead-inner { padding-top: 22px; padding-bottom: 23px; }
+.masthead-kicker { font-size: 11px; }
+.masthead-title { font-size: 34px; }
+.masthead-agency { font-size: 13px; }
+
+@media (max-width: 1320px) {
+  :root { --sidebar: 330px; --inspector: 380px; }
+  .studio-grid { grid-template-columns: var(--sidebar) minmax(470px, 1fr) var(--inspector); }
+}
+
+@media (max-width: 1060px) {
+  :root { --header-h: 74px; }
+  .topbar::before { width: 48px; height: 48px; }
+  .topbar-title { min-width: 230px; }
+  .topbar-title strong { font-size: 20px; }
+  .topbar .save-state { display: none; }
+}
+
+@media (max-width: 940px) {
+  :root { --mobile-tabs-h: 52px; }
+  .topbar::before { width: 42px; height: 42px; }
+  .topbar-title { min-width: 0; }
+  .mobile-tabs button { font-size: 12px; }
+  .panel-header { height: 52px; }
+}
+
+@media (max-width: 560px) {
+  .topbar::before { width: 38px; height: 38px; margin-right: 0; }
+  .topbar { padding: 0 10px; }
+  .topbar-title { display: flex; }
+  .topbar-title span { font-size: 8px; }
+  .topbar-title strong { font-size: 16px; }
+  .topbar-separator { display: none; }
+  .masthead-inner {
+    width: calc(100% - 32px);
+    grid-template-columns: 52px minmax(0, 1fr);
+    column-gap: 12px;
+  }
+  .masthead-inner::before { width: 46px; height: 46px; }
+  .masthead-title { font-size: 27px; }
+}
