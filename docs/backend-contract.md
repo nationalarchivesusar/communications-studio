@@ -1,25 +1,40 @@
-# Planned backend contract
+# Communications Studio backend contract
 
-The frontend is built so authentication and publishing can be added without changing the builder data model.
+The frontend and backend are deliberately separated. GitHub Pages owns the builder UI; the backend owns authentication, authorization, and eventually Discord publishing.
 
-## Goals
+## Canonical Discord guild
 
-The backend will eventually own:
+Communications Studio is scoped to the United States of America Roblox Discord server:
+
+`886068973886640129`
+
+All Discord-role authorization is evaluated only against this guild.
+
+## Backend responsibilities
+
+Implemented now:
 
 - Discord OAuth
 - Roblox OAuth / account linking
 - persistent application sessions
 - Discord guild membership and role lookup
-- publishing identities and authorization
-- channel authorization
-- incoming/application-owned webhook credentials
+- Roblox group/rank snapshots
+- publishing identity authorization
+- `/auth/session`
+- `/api/identities`
+- authorization-gated `/api/publish` stub
+
+Still to implement before live publishing:
+
+- destination-channel authorization
+- application-owned webhook credentials
 - managed webhook display names and avatars
 - managed ping-role IDs and allowed-mentions policy
-- final payload validation
-- posting, editing, and deleting Discord webhook messages
+- final Components V2 validation/rendering
+- posting/editing/deleting Discord webhook messages
 - audit records
 
-The frontend will continue to own announcement composition, live preview, editable draft state, and builder interaction.
+The frontend owns announcement composition, live preview, editable draft state, and builder interaction.
 
 Communications Studio deliberately does **not** expose arbitrary webhook appearance, arbitrary mentions, File components, multiple Containers, or interactive non-link buttons.
 
@@ -35,21 +50,34 @@ Unauthenticated:
 {"authenticated":false}
 ```
 
-Authenticated example:
+Authenticated shape:
 
 ```json
 {
   "authenticated": true,
   "user": {
     "id": "internal-user-id",
-    "display_name": "Ray",
-    "username": "ray4390",
+    "display_name": "Example User",
+    "username": "example",
     "provider": "Discord",
-    "avatar_url": "https://...",
+    "studio_access": true,
     "allowed_identity_ids": ["white_house", "doj"],
+    "publishing_identities": [
+      {
+        "id": "white_house",
+        "category": "White House",
+        "label": "The White House",
+        "display_name": "The White House",
+        "avatar_url": "",
+        "avatar_initials": "WH",
+        "avatar_color": "#16365d",
+        "ping_label": "@White House Ping",
+        "ping_enabled": false
+      }
+    ],
     "discord": {
       "id": "1234567890",
-      "guild_id": "...",
+      "guild_id": "886068973886640129",
       "roles": ["...", "..."]
     },
     "roblox": {
@@ -60,55 +88,96 @@ Authenticated example:
 }
 ```
 
-`allowed_identity_ids` is the frontend convenience list used to hide identities the user cannot select. It is not an authorization boundary; the backend must re-check the user's current Discord roles at publish time.
+The frontend dropdown is built from `publishing_identities`. Production users therefore never receive unauthorized identity options. Browser Preview intentionally bypasses this and displays the complete local catalog.
+
+`allowed_identity_ids` and hidden frontend options are conveniences, not the security boundary. The backend recomputes authorization and must check it again at publish time.
 
 ## OAuth entry points
 
 ### `GET /auth/discord?return_to=<url>`
 
-Starts Discord OAuth and redirects back to an allow-listed return URL. The callback should exchange the code server-side, resolve the Discord user and USAR guild membership/roles, attach or create the internal user, establish a persistent application session, then return to Communications Studio.
+Starts Discord OAuth using `identify guilds.members.read`. The callback exchanges the code server-side, resolves membership in guild `886068973886640129`, links/creates the internal Studio user, and creates a persistent Studio session.
+
+Discord is the primary Studio login. When the bot token is configured, subsequent authorization checks refresh guild roles directly through the installed bot rather than trusting the roles observed at login forever.
 
 ### `GET /auth/roblox?return_to=<url>`
 
-Same shape for Roblox OAuth. Roblox should normally be a linked identity rather than the sole authorization source for Discord publishing permissions.
+Starts Roblox OAuth using `openid profile` and PKCE. Roblox can be linked to an existing Discord-authenticated Studio user or can establish a session that then prompts the user to connect Discord.
+
+Roblox group/rank authorization is used for the government publishing identities defined in [`publishing-identities.md`](publishing-identities.md).
+
+Roblox is rolling out domain-scoped user IDs in 2026. The current implementation takes an initial group-role snapshot with Roblox's recommended v2 group-role endpoint. The production refresh path should move to Roblox OAuth/Open Cloud group-membership lookup so authorization remains safe as scoped IDs become the norm.
+
+## Discord-role-controlled identities
+
+FEC and NARA do not depend on Roblox ranks.
+
+In guild `886068973886640129`:
+
+- FEC: `1459393135175270593`, `1031740186750636042`
+- NARA: `1089923208079220797`
+
+All other currently configured identities use the curated Roblox group/rank policy.
 
 ## Session persistence
 
-Use a rotating opaque server-side session identifier in a cookie with appropriate `Secure`, `HttpOnly`, and `SameSite` attributes. Do not place Discord or Roblox access/refresh tokens in localStorage or expose them to the frontend.
+The backend uses a random opaque server-side session identifier. The cookie is `HttpOnly`, `Secure` in production, and defaults to a 30-day lifetime.
 
-If the frontend remains on `nationalarchivesusar.github.io` while the API lives on an unrelated domain, cross-site cookie restrictions can complicate persistent sessions. A same-site custom-domain arrangement is the cleanest long-term deployment.
+Do not place Discord or Roblox access/refresh tokens in localStorage or expose provider credentials to frontend JavaScript.
+
+If the frontend stays at `nationalarchivesusar.github.io` while the API is on an unrelated domain, cross-site cookie restrictions can interfere with persistent sessions even with `SameSite=None; Secure`. A shared custom-domain arrangement is preferred long-term.
 
 ## Logout
 
 ### `POST /auth/logout`
 
-Invalidates the current application session.
+Invalidates the current application session and clears the session cookie.
 
 ## Publishing identities
 
-Publishing identities are server-managed records. A typical record should contain:
+Publishing identities are server-managed policy records. Each identity contains its display name/avatar metadata, category, ping policy, and an authorization rule based on either Roblox group ranks or Discord roles.
+
+The complete current matrix is in [`publishing-identities.md`](publishing-identities.md).
+
+The browser chooses only an authorized identity ID. It never controls:
+
+- webhook credentials
+- final display name
+- final avatar
+- Discord application badge
+- timestamp
+- arbitrary role IDs
+- arbitrary `allowed_mentions`
+
+## `GET /api/identities`
+
+Returns only the identities the authenticated user currently qualifies for.
+
+Example:
 
 ```json
 {
-  "id": "white_house",
-  "display_name": "The White House",
-  "avatar_url": "https://...",
-  "ping_label": "@White House Ping",
-  "ping_role_id": "1234567890",
-  "authorized_role_ids": ["..."],
-  "allowed_channel_ids": ["..."]
+  "identities": [
+    {
+      "id": "usms",
+      "category": "Department of Justice",
+      "label": "United States Marshals Service",
+      "display_name": "United States Marshals Service",
+      "avatar_url": "",
+      "avatar_initials": "USMS",
+      "avatar_color": "#4a3b26",
+      "ping_label": "@Executive Ping",
+      "ping_enabled": false
+    }
+  ]
 }
 ```
 
-The browser chooses only the identity ID. It never supplies or overrides `display_name`, `avatar_url`, `ping_role_id`, webhook credentials, or the final `allowed_mentions` object.
+## `POST /api/publish`
 
-Examples of identities include the White House, Department of Justice, Department of State, Secret Service, Marshals Service, House of Representatives, Senate, Department of Defense, Department of the Army, Capitol Police, Metropolitan Police Department, and NARA.
+The route exists now as an authorization gate and intentionally returns `501 publishing_not_configured` after verifying the selected identity. Discord webhook execution is the next backend phase.
 
-## Future publishing
-
-### `POST /api/publish`
-
-Proposed request:
+Final request shape:
 
 ```json
 {
@@ -132,40 +201,40 @@ Proposed request:
 }
 ```
 
-The backend must not trust browser-supplied webhook credentials, role lists, channel permissions, publishing identities, display names, avatars, role IDs, or mention payloads. It should:
+Before sending a live message the backend must:
 
-1. re-check the session and current Discord roles;
-2. verify access to the selected identity and destination channel;
-3. require exactly one Container;
-4. reject File components and attachment-backed media;
-5. reject non-link Buttons;
-6. load the server-managed webhook display name/avatar for the identity;
-7. if `send_ping` is true, inject only the identity's configured ping role and whitelist only that role in `allowed_mentions`;
-8. render the final Components V2 payload;
-9. execute the server-owned webhook with `wait=true`; and
-10. store the resulting Discord message ID plus an immutable audit snapshot.
+1. re-check the application session;
+2. refresh current Discord/Roblox authorization as appropriate;
+3. verify the selected identity and destination channel;
+4. require exactly one Container;
+5. reject File components and attachment-backed media;
+6. reject non-link Buttons;
+7. load server-managed webhook display name/avatar;
+8. if `send_ping` is true, inject only that identity's configured ping role and whitelist only that role in `allowed_mentions`;
+9. render the final Components V2 payload;
+10. execute the server-owned/application-owned webhook with `wait=true`; and
+11. store the resulting Discord message ID plus an immutable audit snapshot.
 
-Discord itself supplies the actual message timestamp and application badge. The frontend only simulates those values for preview and does not permit users to edit them.
+Discord itself supplies the real timestamp and APP/application badge.
 
 ## Draft persistence
 
-The current frontend uses localStorage so it works immediately. The same document schema can later back authenticated endpoints such as `GET/POST /api/drafts` and `GET/PUT/DELETE /api/drafts/:id`; local storage can remain an offline/recovery copy.
+The frontend currently uses localStorage. The same builder document can later be persisted behind authenticated `GET/POST /api/drafts` and `GET/PUT/DELETE /api/drafts/:id` endpoints; localStorage can remain as a recovery copy.
 
 ## Media
 
-Communications Studio permits URL-based media in Thumbnails and Media Galleries. It does not permit Discord File components or `attachment://` media references. If uploads are added someday, that should be a separate explicitly approved product decision rather than an implicit capability of the current builder.
+Communications Studio permits URL-based media in Thumbnails and Media Galleries. It does not permit Discord File components or `attachment://` media references.
 
-## Authorization
+## Authorization rule
 
-A likely policy model:
+The browser is never trusted to decide access.
 
 ```text
-Discord role ID
-    -> publishing identity
-        -> managed webhook name/avatar
-        -> permitted destination channels
-        -> can draft / can publish
-        -> one permitted ping role
+Studio session
+    -> Discord roles in guild 886068973886640129
+    + linked Roblox group/rank state
+        -> authorized publishing identities
+            -> allowed destination channels
+            -> managed webhook identity
+            -> one optional managed ping
 ```
-
-Authorization must always be enforced by the backend even if the frontend hides unavailable identities or channels.
