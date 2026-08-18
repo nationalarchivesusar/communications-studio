@@ -1,6 +1,6 @@
 # USAR Communications Studio
 
-A browser-based builder for official USAR Discord announcements using Discord Components V2.
+A browser-based builder for official USAR Discord announcements using Discord Components V2!
 
 The current repository is intentionally frontend-first. It is a static application suitable for GitHub Pages today, while keeping authentication, role resolution, webhook credentials, file uploads, and publishing behind a future backend API.
 
