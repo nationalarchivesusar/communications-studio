@@ -1,0 +1,30 @@
+name: Roblox organization audit
+
+on:
+  push:
+    paths:
+      - '.github/workflows/roblox-org-audit.yml'
+      - 'scripts/roblox_org_audit.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run recursive Roblox ally/role audit
+        run: python3 scripts/roblox_org_audit.py
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: roblox-org-audit
+          path: audit-output/
+          if-no-files-found: error
+          retention-days: 1
