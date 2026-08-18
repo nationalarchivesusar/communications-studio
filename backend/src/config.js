@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import path from 'node:path';
 
+const DEFAULT_USAR_DISCORD_GUILD_ID = '886068973886640129';
+
 function int(value, fallback) {
   const parsed = Number.parseInt(value ?? '', 10);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -33,7 +35,7 @@ export const config = Object.freeze({
   discord: {
     clientId: process.env.DISCORD_CLIENT_ID || '',
     clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
-    guildId: process.env.DISCORD_GUILD_ID || '',
+    guildId: process.env.DISCORD_GUILD_ID || DEFAULT_USAR_DISCORD_GUILD_ID,
     botToken: process.env.DISCORD_BOT_TOKEN || '',
     redirectUri: process.env.DISCORD_REDIRECT_URI || `${publicBaseUrl}/auth/discord/callback`
   },
@@ -54,7 +56,8 @@ export const config = Object.freeze({
 
 export function validateRuntimeConfig() {
   const problems = [];
-  if (!config.discord.clientId || !config.discord.clientSecret || !config.discord.guildId) problems.push('Discord OAuth is not fully configured.');
+  if (!config.discord.clientId || !config.discord.clientSecret) problems.push('Discord OAuth is not fully configured.');
+  if (!config.discord.guildId) problems.push('The USAR Discord guild ID is not configured.');
   if (!config.roblox.clientId || !config.roblox.clientSecret) problems.push('Roblox OAuth is not fully configured.');
   if (config.cookieSameSite === 'none' && !config.cookieSecure) problems.push('SameSite=None cookies require COOKIE_SECURE=true in browsers.');
   return problems;
