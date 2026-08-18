@@ -1,61 +1,67 @@
 # USAR Communications Studio
 
-A browser-based builder for official USAR Discord announcements using Discord Components V2.
+A browser-based builder for official United States of America Roblox Discord announcements using Discord Components V2.
 
-The current repository is intentionally frontend-first. It is a static application suitable for GitHub Pages today, while keeping authentication, role resolution, webhook credentials, managed publishing identities, and final publishing behind a future backend API.
+The project now consists of a static GitHub Pages frontend plus an in-repository Node/Express backend ready to deploy on the USAR Linux server.
 
-## Current features
+## Current frontend
 
-- Responsive single-page builder with a dedicated sign-in screen
-- Discord and Roblox OAuth entry points already wired to configurable backend routes
-- Browser-local preview session for frontend development
-- Browser-local draft autosave
-- Undo / redo
+- Responsive single-page builder with Discord and Roblox sign-in entry points
+- Browser Preview mode for frontend development
+- Browser-local draft autosave and undo/redo
 - Exactly one Discord Components V2 Container per announcement
 - Drag-to-reorder child components
-- Click components in the live Discord preview to edit them
-- Full-width Discord preview workspace with dark/light and desktop/mobile modes
-- Managed publishing-identity selector for White House, DOJ, State, USSS, USMS, House, Senate, DoD, Army, USCP, MPD, and NARA
-- Managed webhook display name/avatar/application badge/timestamp behavior; users cannot edit those fields
-- Per-identity ping toggle only; arbitrary allowed-mentions controls are not exposed
-- V2 Container accent colors and spoilers
-- Text Display with live Discord-style Markdown rendering
-- Section with 1–3 Text Displays and a Thumbnail or Link Button accessory
-- Separator with small/large spacing and optional divider
-- Media Gallery with 1–10 URL-based items
-- No Discord File components or `attachment://` media
-- Action Rows with up to five Link Buttons or one select menu
+- Click-to-edit live Discord preview
+- Full-width dark/light desktop/mobile preview workspace
+- Managed publishing identities; webhook name/avatar/timestamp/APP badge are not user-editable
+- Per-identity approved ping toggle only; no arbitrary mention configuration
+- Text Displays, Sections, Separators, Media Galleries, Link Buttons, and select menus
+- No File components or attachment-backed media
 - No interactive non-link Buttons
-- String, User, Role, Mentionable, and Channel selects
-- Discord's 40-component message-limit tracking
-- Select-menu `custom_id` validation and duplicate detection
-- Import existing Components V2 JSON into the constrained editable builder; unsupported File/non-link Button content is discarded
-- Export either an editable Studio document or a Discord webhook Components V2 JSON body
+- Discord's 40-component limit validation
+- Components V2 import/export using `flags: 32768`
 
-The API exporter uses `flags: 32768` (`IS_COMPONENTS_V2`) and Discord's native component type IDs.
+## Publishing identities
 
-## Publishing policy
+Production users do **not** receive the full identity catalog. The backend computes authorized identities from the user's current Discord roles and linked Roblox group ranks and sends only those identities to the builder.
 
-Communications Studio is intentionally more restrictive than Discord's full Components V2 feature set. Users compose the announcement content, but publishing identity and notification behavior are policy-controlled.
+Browser Preview intentionally shows the complete catalog.
 
-The production backend will determine which publishing identities a user may select from their current Discord roles. Each identity owns its webhook display name, avatar, permitted channels, and at most one configured ping role. The browser submits an identity ID and `send_ping` boolean; it never supplies arbitrary webhook appearance or mention-role IDs.
+The canonical authorization matrix is documented in [`docs/publishing-identities.md`](docs/publishing-identities.md).
 
-The current frontend contains placeholder identity metadata so the workflow can be exercised before the backend is connected. Exact production avatar URLs and ping role IDs should be server-managed.
+The Studio is scoped to Discord guild:
+
+`886068973886640129`
+
+FEC and NARA use Discord-role authorization in that guild. Other current identities use curated Roblox group ranks.
+
+## Backend
+
+The backend currently implements:
+
+- persistent opaque 30-day Studio sessions
+- Discord OAuth (`identify guilds.members.read`)
+- Roblox OAuth (`openid profile`) with PKCE
+- Discord + Roblox account linking
+- Discord role refresh through the installed bot
+- Roblox group/rank authorization snapshots
+- `/auth/session`
+- `/api/identities`
+- authorization-gated `/api/publish` stub
+- SQLite persistence
+- automated identity-policy tests
+
+See [`backend/README.md`](backend/README.md) for deployment/configuration and [`docs/backend-contract.md`](docs/backend-contract.md) for the API boundary.
 
 ## Preview fidelity
 
-The preview deliberately targets the current Discord desktop message surface. A third-party webpage cannot promise literal pixel identity across every Discord client because Discord's production CSS, proprietary `gg sans` font, client density, platform font rasterization, themes, and client revisions are not a public compatibility contract.
+The preview deliberately targets the Discord desktop message surface. A third-party webpage cannot guarantee literal pixel identity across every Discord client because Discord's production CSS, proprietary `gg sans` font, density settings, OS font rasterization, themes, and client revisions are not a public compatibility contract.
 
-The builder therefore separates:
+The builder therefore separates API accuracy from visual fidelity. A future **Send test message** action should post the payload to a private Discord preview channel; Discord itself is the authoritative renderer.
 
-1. **API accuracy** — component nesting, field names, type IDs, limits, and exported payload shape follow Discord's current developer documentation.
-2. **Visual fidelity** — CSS closely recreates the current desktop message surface without bundling Discord proprietary assets.
+## Local frontend development
 
-A future **Send test message** action should post the payload to a private Discord preview channel; Discord itself is the only authoritative renderer.
-
-## Local development
-
-No build step is required.
+No frontend build step is required.
 
 ```bash
 python3 -m http.server 8000
@@ -65,19 +71,17 @@ Open `http://localhost:8000` and choose **Open Builder Preview**.
 
 ## GitHub Pages
 
-The app uses relative asset paths and includes `.nojekyll`, so it can be served directly from the repository root at:
+The frontend is served from the repository root at:
 
 `https://nationalarchivesusar.github.io/communications-studio/`
 
-## Authentication configuration
+`config.js` is public runtime configuration. Never put OAuth client secrets, bot tokens, webhook tokens, database credentials, or production role secrets in it.
 
-`config.js` is public runtime configuration. Never put OAuth client secrets, provider tokens, webhook tokens, database credentials, signing keys, production ping role IDs, or other privileged publishing policy in it.
-
-When the backend exists, set `apiBase` and disable preview access. See [`docs/backend-contract.md`](docs/backend-contract.md) for the planned API boundary.
+Once the API has a public HTTPS hostname, set `apiBase` in `config.js`. Until then the browser preview remains usable with no backend.
 
 ## Security model
 
-The production backend should own OAuth exchanges and tokens, rotating application sessions, Discord guild-role authorization, Roblox account linking, webhook secrets, publishing identities, ping-role resolution, allowed-mention enforcement, and final publish authorization. The browser UI is never the authorization boundary.
+The browser is never the authorization boundary. The backend re-evaluates publishing access, owns session/OAuth secrets, owns destination/webhook policy, resolves approved ping roles, and will perform final message validation before posting.
 
 ## Discord references
 
