@@ -109,6 +109,9 @@ export async function robloxUserInfo(accessToken) {
 
 export async function robloxGroupRoles(userId) {
   if (!userId) return [];
-  const data = await jsonFetch(`https://groups.roblox.com/v1/users/${encodeURIComponent(userId)}/groups/roles`);
+  // Roblox currently recommends the v2 endpoint over the legacy v1 equivalent.
+  // This is used only as the initial/cached role snapshot. Production refreshes
+  // should migrate to Roblox Open Cloud membership lookup as scoped IDs roll out.
+  const data = await jsonFetch(`https://groups.roblox.com/v2/users/${encodeURIComponent(userId)}/groups/roles`);
   return Array.isArray(data?.data) ? data.data : [];
 }
