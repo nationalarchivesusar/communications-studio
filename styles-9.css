@@ -1,0 +1,37 @@
+/* Identity authorization and account-linking UI. */
+.linked-accounts {
+  margin: 0 0 16px;
+  padding: 11px;
+  border: 1px solid #b8bdc2;
+  background: #f6f6f4;
+}
+.linked-accounts strong { display:block; color:#26384a; font-size:12px; }
+.linked-accounts span { display:block; margin-top:4px; color:#69727a; font-size:10px; line-height:1.5; }
+.linked-accounts .add-inline-btn { margin-top:9px; }
+
+.access-gate {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: #f2f2ef;
+  border-top: 5px solid #8b1e2d;
+}
+.access-gate-card {
+  width: min(100%, 640px);
+  padding: 28px 30px;
+  border: 1px solid #aeb4ba;
+  border-top: 7px solid #17365d;
+  background: #fff;
+}
+.access-gate-card h1 {
+  margin: 7px 0 10px;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #1f3448;
+  font-size: 28px;
+  font-weight: 400;
+}
+.access-gate-card p { margin:0; color:#56616b; font-size:14px; line-height:1.6; }
+.access-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+.select-input optgroup { font-weight:700; color:#26384a; }
+.select-input option { font-weight:400; }
