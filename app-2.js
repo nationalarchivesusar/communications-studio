@@ -15,7 +15,7 @@
             <div class="section-kicker">Government Communications</div>
             <h1>Communications Studio</h1>
             <p>Create, edit, and preview Discord Components V2 announcements for official USAR communications.</p>
-            <p class="login-secondary">Access and publishing permissions will be determined from your connected Discord and Roblox accounts when the backend is enabled.</p>
+            <p class="login-secondary">Sign in to access the Studio and your authorized publishing identities.</p>
 
             <div class="login-information">
               <div><strong>Builder</strong><span>Compose Containers, Sections, Text Displays, media, files, buttons, and select menus.</span></div>
@@ -28,16 +28,11 @@
             <div class="login-panel">
               <div class="section-kicker">Access Communications Studio</div>
               <h2>Sign in</h2>
-              <p class="lede">Use an official account to continue.</p>
+              <p class="lede">Sign in to continue.</p>
 
-              <button class="auth-button discord" data-action="auth-discord">
-                <span class="auth-icon">${discordLogo()}</span>
-                <span class="auth-copy">Sign in with Discord<small>Server roles and permissions</small></span>
-              </button>
-
-              <button class="auth-button roblox" data-action="auth-roblox">
-                <span class="auth-icon">${robloxLogo()}</span>
-                <span class="auth-copy">Sign in with Roblox<small>Roblox identity</small></span>
+              <button class="auth-button discord" data-action="auth-signin">
+                <span class="auth-icon">${icon("external")}</span>
+                <span class="auth-copy">Sign In</span>
               </button>
 
               ${CONFIG.enablePreviewAccess ? `
@@ -48,7 +43,7 @@
                 </button>
               ` : ""}
 
-              <div class="auth-note">Production sign-in will use secure server-side sessions. Provider credentials will not be stored in the browser.</div>
+              <div class="auth-note">Secure sign-in is handled through the Communications Studio backend.</div>
             </div>
           </aside>
         </section>
