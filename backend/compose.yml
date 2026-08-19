@@ -1,0 +1,20 @@
+services:
+  communications-studio-api:
+    build:
+      context: .
+    container_name: communications-studio-api
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - communications_studio_data:/app/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  communications_studio_data:
