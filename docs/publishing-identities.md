@@ -10,6 +10,31 @@ Communications Studio is scoped to the United States of America Roblox Discord s
 
 Discord role-based authorization is evaluated only against this guild.
 
+## Discord publication channels
+
+| Route | Channel ID |
+|---|---:|
+| `#white-house` | `899467464826556427` |
+| `#executive-branch` | `886076674792390707` |
+| `#legislative-branch` | `886077286414172171` |
+| `#judicial-branch` | `886077834911678464` |
+| FEC publication channel | `1076283102822940713` |
+
+## Approved notification roles
+
+| Notification | Role ID |
+|---|---:|
+| Executive Ping | `937155572342587392` |
+| White House Ping | `1156347407899041812` |
+| Legislative Ping | `1156346015234924615` |
+| Judicial Ping | `1156346227286360236` |
+
+Normal identities are routed to their branch channel and may either publish silently or use their one approved branch notification role. White House/EOP/WHMO use `#white-house` + White House Ping. OVP publishes in `#white-house` but uses Executive Ping. House/Senate/USCP use the legislative channel/ping. Judiciary identities use the judicial channel/ping. All other included departments, agencies, intelligence identities, MPD, DCFEMS, DoD, DCNG, and military identities publish through `#executive-branch` and use Executive Ping.
+
+**FEC** publishes only in channel `1076283102822940713`. It may publish silently, use `@everyone`, use any one or more of the four approved branch ping roles, or combine `@everyone` with any/all of those four roles.
+
+**NARA** may publish to any of the four branch channels and may use any one or more of the four approved branch ping roles. NARA may not use `@everyone`.
+
 ## General rules
 
 - Production users see only publishing identities for which the backend currently authorizes them.
@@ -122,4 +147,4 @@ Authorized Discord roles in guild `886068973886640129`:
 
 ## Enforcement
 
-The browser is not the security boundary. The backend must recompute current Discord roles and current Roblox group roles before returning identities and again before publishing. A hidden/disabled frontend option is not sufficient authorization.
+The browser is not the security boundary. The backend must recompute current Discord roles and current Roblox group roles before returning identities and again before publishing. Channel routing, ping-role IDs, and `@everyone` authorization are also enforced server-side; a hidden/disabled frontend option is not sufficient authorization.
