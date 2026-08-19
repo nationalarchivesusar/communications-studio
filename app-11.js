@@ -25,6 +25,8 @@
     const action = target.dataset.action;
     if (!action) return;
     switch (action) {
+      case "auth-guided": startGuidedAuth(); break;
+      case "auth-roblox-guided": continueRobloxAuth(); break;
       case "auth-discord": auth("discord"); break;
       case "auth-roblox": auth("roblox"); break;
       case "auth-preview": createPreviewSession(); break;
