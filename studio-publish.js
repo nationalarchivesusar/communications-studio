@@ -83,6 +83,7 @@ async function studioSendPublication() {
   try {
     const confirmedDocument = clone(state);
     confirmedDocument._publish_confirmation = "explicit-user-confirmation";
+    confirmedDocument._publish_action = "publish-now-button";
     const response = await fetch(`${CONFIG.apiBase.replace(/\/$/, "")}/api/publish`, {
       method: "POST",
       credentials: "include",
