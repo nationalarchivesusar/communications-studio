@@ -30,6 +30,28 @@
     return String(name || "US").split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "US";
   }
 
+  function authFlowStage() {
+    try { return sessionStorage.getItem("usar-communications-studio:v1:auth-flow") || ""; }
+    catch { return ""; }
+  }
+
+  function setAuthFlowStage(stage) {
+    try {
+      if (stage) sessionStorage.setItem("usar-communications-studio:v1:auth-flow", stage);
+      else sessionStorage.removeItem("usar-communications-studio:v1:auth-flow");
+    } catch { /* no-op */ }
+  }
+
+  function startGuidedAuth() {
+    setAuthFlowStage("discord-pending");
+    auth("discord");
+  }
+
+  function continueRobloxAuth() {
+    setAuthFlowStage("roblox-pending");
+    auth("roblox");
+  }
+
   async function auth(provider) {
     if (!CONFIG.apiBase) {
       toast(`${provider === "discord" ? "Discord" : "Roblox"} OAuth is ready for the backend endpoint, but no apiBase is configured yet.`, "warn");
@@ -50,7 +72,9 @@
       session = {
         displayName: data.user?.display_name || data.user?.username || "Authenticated User",
         provider: data.user?.provider || "Connected",
-        user: data.user || {}
+        user: data.user || {},
+        discord: data.user?.discord || null,
+        roblox: data.user?.roblox || null
       };
       return true;
     } catch {
@@ -70,6 +94,7 @@
   }
 
   function createPreviewSession() {
+    setAuthFlowStage("");
     session = { displayName: "Preview User", provider: "Browser preview", expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 30 };
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     state = loadDraft();
@@ -81,6 +106,7 @@
       try { await fetch(`${CONFIG.apiBase.replace(/\/$/, "")}${CONFIG.logoutPath}`, { method: "POST", credentials: "include" }); } catch { /* no-op */ }
     }
     localStorage.removeItem(SESSION_KEY);
+    setAuthFlowStage("");
     session = null;
     renderLogin();
   }
