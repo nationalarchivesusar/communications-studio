@@ -2,7 +2,7 @@
 
 A browser-based builder for official United States of America Roblox Discord announcements using Discord Components V2.
 
-The project now consists of a static GitHub Pages frontend plus an in-repository Node/Express backend ready to deploy on the USAR Linux server.
+The project consists of a static GitHub Pages frontend plus a standalone backend service maintained at [`ray4390/communications-studio-backend`](https://github.com/ray4390/communications-studio-backend).
 
 ## Current frontend
 
@@ -14,7 +14,7 @@ The project now consists of a static GitHub Pages frontend plus an in-repository
 - Click-to-edit live Discord preview
 - Full-width dark/light desktop/mobile preview workspace
 - Managed publishing identities; webhook name/avatar/timestamp/APP badge are not user-editable
-- Per-identity approved ping toggle only; no arbitrary mention configuration
+- Server-managed destination channels and notification policy
 - Text Displays, Sections, Separators, Media Galleries, Link Buttons, and select menus
 - No File components or attachment-backed media
 - No interactive non-link Buttons
@@ -27,31 +27,35 @@ Production users do **not** receive the full identity catalog. The backend compu
 
 Browser Preview intentionally shows the complete catalog.
 
-The canonical authorization matrix is documented in [`docs/publishing-identities.md`](docs/publishing-identities.md).
-
 The Studio is scoped to Discord guild:
 
 `886068973886640129`
 
 FEC and NARA use Discord-role authorization in that guild. Other current identities use curated Roblox group ranks.
 
+The frontend copy of the authorization design remains in [`docs/publishing-identities.md`](docs/publishing-identities.md). The runtime/canonical backend policy lives in the standalone backend repository.
+
 ## Backend
 
-The backend currently implements:
+**Canonical backend repository:** [`ray4390/communications-studio-backend`](https://github.com/ray4390/communications-studio-backend)
 
-- persistent opaque 30-day Studio sessions
+The standalone backend currently implements:
+
+- persistent opaque Studio sessions
 - Discord OAuth (`identify guilds.members.read`)
 - Roblox OAuth (`openid profile`) with PKCE
 - Discord + Roblox account linking
-- Discord role refresh through the installed bot
-- Roblox group/rank authorization snapshots
+- fresh Discord guild membership/role checks using the installed bot token
+- Roblox group/rank authorization
 - `/auth/session`
 - `/api/identities`
+- server-enforced destination channel/ping policy
 - authorization-gated `/api/publish` stub
 - SQLite persistence
-- automated identity-policy tests
+- Docker/Compose deployment
+- automated identity and routing tests
 
-See [`backend/README.md`](backend/README.md) for deployment/configuration and [`docs/backend-contract.md`](docs/backend-contract.md) for the API boundary.
+The legacy `backend/` directory in this frontend repository is retained temporarily as a migration snapshot and should **not** be treated as the deployment source. It can be removed after the standalone backend has been deployed and smoke-tested.
 
 ## Preview fidelity
 
