@@ -52,7 +52,8 @@ function normalizeIdentityForClient(raw) {
     displayName:raw.display_name || raw.displayName || raw.label || raw.id,
     avatarUrl:raw.avatar_url || raw.avatarUrl || '', avatarInitials:raw.avatar_initials || raw.avatarInitials || initials(raw.label || raw.id),
     avatarColor:raw.avatar_color || raw.avatarColor || '#16365d', pingLabel:raw.ping_label || raw.pingLabel || '@Ping',
-    pingRoleId:raw.ping_enabled === false ? '' : 'server-managed' };
+    pingRoleId:raw.ping_enabled === false ? '' : 'server-managed',
+    position:raw.position || '', officeEmoji:raw.office_emoji || raw.officeEmoji || '' };
 }
 function availablePublishingIdentities() {
   if (isBuilderPreviewSession()) return STUDIO_PREVIEW_IDENTITIES.map((item) => normalizeIdentityForClient({ ...item, ping_enabled:true }));
