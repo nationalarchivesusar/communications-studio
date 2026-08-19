@@ -25,8 +25,7 @@
     const action = target.dataset.action;
     if (!action) return;
     switch (action) {
-      case "auth-guided": startGuidedAuth(); break;
-      case "auth-roblox-guided": continueRobloxAuth(); break;
+      case "auth-signin": startSignIn(); break;
       case "auth-discord": auth("discord"); break;
       case "auth-roblox": auth("roblox"); break;
       case "auth-preview": createPreviewSession(); break;
@@ -78,7 +77,7 @@
       case "section-add-text": mutate(() => { const c = selectedEntity(); if (c?.kind === "section" && c.texts.length < 3) c.texts.push("New text display"); }); break;
       case "section-remove-text": mutate(() => { const c = selectedEntity(); if (c?.kind === "section" && c.texts.length > 1) c.texts.splice(Number(target.dataset.index), 1); }); break;
       case "gallery-add": mutate(() => { const c = selectedEntity(); if (c?.kind === "gallery" && c.items.length < 10) c.items.push({ id: uid("media"), url: "", description: "", spoiler: false }); }); break;
-      case "gallery-remove": mutate(() => { const c = selectedEntity(); if (c?.kind === "gallery" && c.items.length > 1) c.items = c.items.filter((item) => item.id !== target.dataset.itemId); }); break;
+      case "gallery-remove": mutate(() => { const c = selectedEntity(); if (c?.kind === "gallery" && c.items.length > 1) c.items = c.items.filter((item) => item.id !== el.dataset.itemId); }); break;
       case "button-add": mutate(() => { const c = selectedEntity(); if (c?.kind === "actionRow" && c.buttons.length < 5) c.buttons.push({ id: uid("btn"), label: "Button", style: 2, url: "", customId: "", disabled: false, emoji: "" }); }); break;
       case "button-remove": mutate(() => { const c = selectedEntity(); if (c?.kind === "actionRow" && c.buttons.length > 1) c.buttons = c.buttons.filter((button) => button.id !== target.dataset.buttonId); }); break;
       case "select-option-add": mutate(() => { const c = selectedEntity(); if (c?.kind === "actionRow" && c.select?.type === 3 && c.select.options.length < 25) c.select.options.push({ id: uid("opt"), label: `Option ${c.select.options.length + 1}`, value: `option_${c.select.options.length + 1}`, description: "", emoji: "", default: false }); }); break;
