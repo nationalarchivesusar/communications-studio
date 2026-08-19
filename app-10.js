@@ -42,14 +42,25 @@
     } catch { /* no-op */ }
   }
 
-  function startGuidedAuth() {
+  function startSignIn() {
+    const hasDiscord = Boolean(session?.discord || session?.user?.discord);
+    const hasRoblox = Boolean(session?.roblox || session?.user?.roblox);
+
+    if (hasDiscord && hasRoblox) {
+      setAuthFlowStage("");
+      state = loadDraft();
+      renderStudio();
+      return;
+    }
+
+    if (hasDiscord) {
+      setAuthFlowStage("roblox-pending");
+      auth("roblox");
+      return;
+    }
+
     setAuthFlowStage("discord-pending");
     auth("discord");
-  }
-
-  function continueRobloxAuth() {
-    setAuthFlowStage("roblox-pending");
-    auth("roblox");
   }
 
   async function auth(provider) {
