@@ -1,0 +1,51 @@
+name: Sync publishing identity logos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sync-identity-logos.yml'
+      - 'scripts/identity-logo-sources.json'
+      - 'scripts/sync-identity-logos.cjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: communications-studio-identity-logos
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install image processor
+        run: npm install --prefix /tmp/communications-studio-logo-sync --no-save sharp@0.34.3
+
+      - name: Download and normalize official logos
+        env:
+          NODE_PATH: /tmp/communications-studio-logo-sync/node_modules
+        run: node scripts/sync-identity-logos.cjs
+
+      - name: Commit synchronized logo assets
+        run: |
+          if git diff --quiet -- assets/identity-logos; then
+            echo 'Identity logos are already current.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/identity-logos
+          git commit -m 'Sync publishing identity logo assets'
+          git push origin HEAD:main
