@@ -7,7 +7,8 @@ const DEFAULT_CHANNELS = Object.freeze({
   white_house: '899467464826556427',
   executive: '886076674792390707',
   legislative: '886077286414172171',
-  judicial: '886077834911678464'
+  judicial: '886077834911678464',
+  fec: '1076283102822940713'
 });
 
 const DEFAULT_PING_ROLES = Object.freeze({
@@ -62,7 +63,8 @@ export const config = Object.freeze({
     white_house: process.env.CHANNEL_WHITE_HOUSE || DEFAULT_CHANNELS.white_house,
     executive: process.env.CHANNEL_EXECUTIVE || DEFAULT_CHANNELS.executive,
     legislative: process.env.CHANNEL_LEGISLATIVE || DEFAULT_CHANNELS.legislative,
-    judicial: process.env.CHANNEL_JUDICIAL || DEFAULT_CHANNELS.judicial
+    judicial: process.env.CHANNEL_JUDICIAL || DEFAULT_CHANNELS.judicial,
+    fec: process.env.CHANNEL_FEC || DEFAULT_CHANNELS.fec
   },
   pingRoles: {
     white_house: process.env.PING_ROLE_WHITE_HOUSE || DEFAULT_PING_ROLES.white_house,
