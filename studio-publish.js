@@ -25,6 +25,7 @@ function studioPublishErrorLabel(code) {
     invalid_user_mention: "One of the selected Discord users is invalid.",
     user_mention_not_in_guild: "One of the selected Discord users is no longer in the server.",
     too_many_user_mentions: "Too many individual Discord users are selected.",
+    explicit_publish_confirmation_required: "Publishing was blocked because the explicit confirmation latch was not present.",
     required_header_fields_missing: "Complete the required header fields before publishing.",
     required_framing_fields_missing: "Complete the required header and footer fields before publishing.",
     exactly_one_container_required: "The announcement must contain exactly one Container.",
@@ -80,17 +81,24 @@ async function studioSendPublication() {
   renderStudio();
 
   try {
+    const confirmedDocument = clone(state);
+    confirmedDocument._publish_confirmation = "explicit-user-confirmation";
     const response = await fetch(`${CONFIG.apiBase.replace(/\/$/, "")}/api/publish`, {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Communications-Studio-Publish": "confirmed"
+      },
       body: JSON.stringify({
+        confirm_publish: true,
         identity_id: identity.id,
         channel_id: channel.id,
         ping_keys: [...(state.message.pingKeys || [])],
         ping_everyone: Boolean(state.message.pingEveryone),
         user_ping_ids: studioUserPings().map((user) => user.id),
-        builder_document: clone(state)
+        builder_document: confirmedDocument
       })
     });
     const data = await response.json().catch(() => ({}));
@@ -121,7 +129,7 @@ const studioRenderTopbarBeforePublish = renderTopbar;
 renderTopbar = function renderTopbarWithPublish() {
   const html = studioRenderTopbarBeforePublish();
   const disabled = isBuilderPreviewSession() || !CONFIG.apiBase;
-  const button = `<button class="toolbar-btn primary" data-action="publish" ${disabled ? "disabled" : ""} title="${disabled ? "Sign in to publish" : "Publish this official communication to Discord"}"><span>${icon("message")}</span><span class="label">Publish</span></button>`;
+  const button = `<button class="toolbar-btn primary" data-action="publish" ${disabled ? "disabled" : ""} title="${disabled ? "Sign in to publish" : "Review and explicitly publish this communication to Discord"}"><span>${icon("message")}</span><span class="label">Publish</span></button>`;
   return html.replace('<div class="user-chip">', `${button}<div class="user-chip">`);
 };
 
@@ -138,7 +146,8 @@ renderModal = function renderModalWithPublish() {
           <div class="inspector-card-head"><strong>${esc(identity?.displayName || identity?.label || "Publishing identity")}</strong></div>
           <div class="field-help" style="font-size:11px;line-height:1.65">Destination: <strong>${esc(channel?.label || "Discord channel")}</strong><br>Notifications: <strong>${esc(notifications.length ? notifications.join(", ") : "None — publish silently")}</strong></div>
         </div>
-        <p class="field-help" style="font-size:11px;line-height:1.65;margin:12px 0 0">Communications Studio will re-check your current authorization and send the rendered Components V2 message immediately. The office identity, channel, emoji, and allowed mentions are enforced by the server.</p>
+        <p class="field-help" style="font-size:11px;line-height:1.65;margin:12px 0 0"><strong>Nothing is sent automatically.</strong> The message is sent only if you click <strong>Publish now</strong> below. Page loads, draft saves, previews, exports, sign-ins, server restarts, and deployments never publish messages.</p>
+        <p class="field-help" style="font-size:11px;line-height:1.65;margin:8px 0 0">After confirmation, Communications Studio re-checks your current authorization and sends the rendered Components V2 message immediately. The office identity, channel, emoji, and allowed mentions are enforced by the server.</p>
       </div>
       <div class="modal-footer"><button class="btn" data-action="modal-close">Cancel</button><button class="btn primary" data-action="publish-confirm-submit">Publish now</button></div>
     </div></div>`;
