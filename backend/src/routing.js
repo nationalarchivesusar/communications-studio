@@ -2,7 +2,8 @@ const CHANNEL_LABELS = Object.freeze({
   white_house: '#white-house',
   executive: '#executive-branch',
   legislative: '#legislative-branch',
-  judicial: '#judicial-branch'
+  judicial: '#judicial-branch',
+  fec: '#fec'
 });
 
 const PING_LABELS = Object.freeze({
@@ -19,14 +20,13 @@ const WHITE_HOUSE = new Set(['white_house', 'eop', 'whmo']);
 const OVP = new Set(['ovp']);
 const LEGISLATIVE = new Set(['house', 'senate', 'uscp', 'uscp_oig']);
 const JUDICIAL = new Set(['judiciary', 'supreme_court']);
-const INDEPENDENT = new Set(['fec', 'nara']);
 
 export function routingPolicy(identityId) {
   const id = String(identityId || '');
 
   if (id === 'fec') {
     return {
-      channelKeys: [...ALL_BRANCH_CHANNELS],
+      channelKeys: ['fec'],
       pingKeys: [...ALL_BRANCH_PINGS],
       allowEveryone: true
     };
@@ -56,10 +56,6 @@ export function routingPolicy(identityId) {
 
   if (JUDICIAL.has(id)) {
     return { channelKeys: ['judicial'], pingKeys: ['judicial'], allowEveryone: false };
-  }
-
-  if (INDEPENDENT.has(id)) {
-    return { channelKeys: [...ALL_BRANCH_CHANNELS], pingKeys: [...ALL_BRANCH_PINGS], allowEveryone: false };
   }
 
   // DOJ, FBI, USMS, MPD, DHS, DCFEMS, State, Defense, DCNG, the military
