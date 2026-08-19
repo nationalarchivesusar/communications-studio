@@ -6,7 +6,8 @@ const STUDIO_DISCORD_CHANNELS = Object.freeze({
   white_house: { key: "white_house", id: "899467464826556427", label: "#white-house" },
   executive: { key: "executive", id: "886076674792390707", label: "#executive-branch" },
   legislative: { key: "legislative", id: "886077286414172171", label: "#legislative-branch" },
-  judicial: { key: "judicial", id: "886077834911678464", label: "#judicial-branch" }
+  judicial: { key: "judicial", id: "886077834911678464", label: "#judicial-branch" },
+  fec: { key: "fec", id: "1076283102822940713", label: "#fec" }
 });
 
 const STUDIO_DISCORD_PINGS = Object.freeze({
@@ -23,7 +24,7 @@ const STUDIO_LEGISLATIVE_IDS = new Set(["house", "senate", "uscp", "uscp_oig"]);
 const STUDIO_JUDICIAL_IDS = new Set(["judiciary", "supreme_court"]);
 
 function studioRoutingForId(id) {
-  if (id === "fec") return { channelKeys: [...STUDIO_ALL_CHANNEL_KEYS], pingKeys: [...STUDIO_ALL_PING_KEYS], allowEveryone: true };
+  if (id === "fec") return { channelKeys: ["fec"], pingKeys: [...STUDIO_ALL_PING_KEYS], allowEveryone: true };
   if (id === "nara") return { channelKeys: [...STUDIO_ALL_CHANNEL_KEYS], pingKeys: [...STUDIO_ALL_PING_KEYS], allowEveryone: false };
   if (STUDIO_WHITE_HOUSE_IDS.has(id)) return { channelKeys: ["white_house"], pingKeys: ["white_house"], allowEveryone: false };
   if (id === "ovp") return { channelKeys: ["white_house"], pingKeys: ["executive"], allowEveryone: false };
@@ -47,12 +48,14 @@ function normalizeRoutedIdentity(raw) {
   const previewRouting = studioPreviewRouting(base.id);
   const channels = Array.isArray(raw?.channels) && raw.channels.length ? raw.channels : previewRouting.channels;
   const pingOptions = Array.isArray(raw?.ping_options) ? raw.ping_options : previewRouting.ping_options;
+  const normalizedPings = pingOptions.map((item) => ({ key: String(item.key || ""), id: String(item.id || ""), label: item.label || `@${item.key || "Ping"}` })).filter((item) => item.id);
   return {
     ...base,
     channels: channels.map((item) => ({ key: String(item.key || ""), id: String(item.id || ""), label: item.label || `#${item.key || "channel"}` })).filter((item) => item.id),
-    pingOptions: pingOptions.map((item) => ({ key: String(item.key || ""), id: String(item.id || ""), label: item.label || `@${item.key || "Ping"}` })).filter((item) => item.id),
+    pingOptions: normalizedPings,
     allowEveryone: raw?.allow_everyone !== undefined ? Boolean(raw.allow_everyone) : previewRouting.allow_everyone,
-    pingRoleId: String(pingOptions[0]?.id || "")
+    pingLabel: normalizedPings.length === 1 ? normalizedPings[0].label : (normalizedPings.length > 1 ? "Multiple notifications" : "No ping"),
+    pingRoleId: String(normalizedPings[0]?.id || "")
   };
 }
 
@@ -140,7 +143,7 @@ renderMessageInspector = function renderMessageInspectorRouted() {
     `data-routing-ping="${esc(ping.key)}"`
   )).join("");
   const everyoneControl = identity.allowEveryone
-    ? renderRoutingToggle("Send @everyone", "FEC is authorized to notify everyone in the selected channel.", Boolean(state.message.pingEveryone), "data-routing-everyone")
+    ? renderRoutingToggle("Send @everyone", "FEC is authorized to notify everyone in its publication channel.", Boolean(state.message.pingEveryone), "data-routing-everyone")
     : "";
 
   return `<h2 class="inspector-heading">Announcement</h2><div class="inspector-type">Publishing identity</div>
