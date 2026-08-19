@@ -15,6 +15,14 @@ function studioAuthHref(provider, flow = "") {
   return `${CONFIG.apiBase.replace(/\/$/, "")}${path}?return_to=${encodeURIComponent(returnUrl.toString())}`;
 }
 
+/* Let the existing boot sequence recognize a direct-link Discord return. */
+function authFlowStage() {
+  const flow = new URLSearchParams(location.search).get("auth_flow");
+  if (flow === "discord") return "discord-pending";
+  try { return sessionStorage.getItem("usar-communications-studio:v1:auth-flow") || ""; }
+  catch { return ""; }
+}
+
 function renderLogin() {
   const hasDiscord = Boolean(session?.discord || session?.user?.discord);
   const provider = hasDiscord ? "roblox" : "discord";
