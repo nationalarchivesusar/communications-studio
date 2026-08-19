@@ -1,0 +1,23 @@
+/* Channel + notification routing controls. */
+.routing-ping-list {
+  display: grid;
+  gap: 8px;
+}
+
+.routing-toggle {
+  background: #f5f5f3;
+  border-color: #b8bdc2;
+}
+
+.routing-toggle .toggle-copy strong {
+  font-size: 12px;
+}
+
+.routing-toggle .toggle-copy span {
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  .routing-ping-list { gap: 10px; }
+}
