@@ -7,7 +7,8 @@ const config = {
     white_house: '899467464826556427',
     executive: '886076674792390707',
     legislative: '886077286414172171',
-    judicial: '886077834911678464'
+    judicial: '886077834911678464',
+    fec: '1076283102822940713'
   },
   pingRoles: {
     executive: '937155572342587392',
@@ -37,23 +38,29 @@ test('legislative and judicial identities route to their branch feeds', () => {
   assert.deepEqual(routingPolicy('supreme_court').channelKeys, ['judicial']);
 });
 
-test('FEC may use any branch ping and everyone', () => {
+test('FEC publishes only in its dedicated channel and may use all branch pings plus everyone', () => {
   const route = publicRouting('fec', config);
-  assert.equal(route.channels.length, 4);
+  assert.deepEqual(route.channels.map((x) => x.id), ['1076283102822940713']);
   assert.equal(route.ping_options.length, 4);
   assert.equal(route.allow_everyone, true);
 
   const result = validatePublishRouting('fec', {
-    channel_id: config.channels.judicial,
+    channel_id: config.channels.fec,
     ping_keys: ['white_house', 'judicial'],
     ping_everyone: true
   }, config);
   assert.equal(result.ok, true);
   assert.deepEqual(result.allowed_mentions.parse, ['everyone']);
   assert.deepEqual(result.allowed_mentions.roles, [config.pingRoles.white_house, config.pingRoles.judicial]);
+
+  assert.deepEqual(validatePublishRouting('fec', {
+    channel_id: config.channels.judicial,
+    ping_keys: [],
+    ping_everyone: false
+  }, config), { ok: false, error: 'channel_not_authorized' });
 });
 
-test('NARA may use all branch pings but never everyone', () => {
+test('NARA may use all branch channels and pings but never everyone', () => {
   const route = publicRouting('nara', config);
   assert.equal(route.channels.length, 4);
   assert.equal(route.ping_options.length, 4);
