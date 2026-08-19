@@ -31,8 +31,38 @@
   async function boot() {
     const ui = (() => { try { return JSON.parse(localStorage.getItem(THEME_KEY) || "{}"); } catch { return {}; } })();
     const server = await restoreServerSession();
-    const preview = server ? false : restorePreviewSession();
-    if (server || preview) {
+
+    if (server) {
+      const hasDiscord = Boolean(session?.discord || session?.user?.discord);
+      const hasRoblox = Boolean(session?.roblox || session?.user?.roblox);
+      const stage = authFlowStage();
+
+      if (hasDiscord && hasRoblox) {
+        setAuthFlowStage("");
+        state = loadDraft();
+        if (ui.previewTheme) state.preview.theme = ui.previewTheme;
+        renderStudio();
+        return;
+      }
+
+      if (stage === "discord-pending" && hasDiscord && !hasRoblox) {
+        setAuthFlowStage("roblox-pending");
+        auth("roblox");
+        return;
+      }
+
+      if (stage === "roblox-pending" && !hasRoblox) {
+        setAuthFlowStage("roblox-needed");
+      }
+
+      renderLogin();
+      return;
+    }
+
+    if (["discord-pending", "roblox-pending"].includes(authFlowStage())) setAuthFlowStage("");
+
+    const preview = restorePreviewSession();
+    if (preview) {
       state = loadDraft();
       if (ui.previewTheme) state.preview.theme = ui.previewTheme;
       renderStudio();
