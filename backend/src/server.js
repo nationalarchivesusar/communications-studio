@@ -7,6 +7,7 @@ import {
   linkProviderAccount, readAppSession, revokeAppSession, updateAccountMetadata
 } from './db.js';
 import { authorizedIdentities, getIdentity } from './policy.js';
+import { enrichIdentityRouting, validatePublishRouting } from './routing.js';
 import {
   discordAuthorizeUrl, discordBotGuildMember, discordOauthGuildMember, discordUser, exchangeDiscordCode,
   exchangeRobloxCode, pkcePair, robloxAuthorizeUrl, robloxGroupRoles, robloxUserInfo
@@ -104,7 +105,7 @@ async function freshAuthorization(userId) {
     discordRoleIds,
     robloxUserId: roblox?.provider_user_id || null,
     robloxGroupRoles: robloxRoles
-  }, config.pingRoles);
+  }, config.pingRoles).map((identity) => enrichIdentityRouting(identity, config));
 
   return { accounts, discordRoleIds, robloxRoles, identities };
 }
@@ -139,7 +140,13 @@ function sessionUserShape(userId, authz) {
 }
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'communications-studio-api', config_warnings: validateRuntimeConfig() });
+  res.json({
+    ok: true,
+    service: 'communications-studio-api',
+    guild_id: config.discord.guildId,
+    configured_channels: config.channels,
+    config_warnings: validateRuntimeConfig()
+  });
 });
 
 app.get('/auth/session', async (req, res, next) => {
@@ -253,11 +260,26 @@ app.post('/api/publish', async (req, res, next) => {
     const authz = await freshAuthorization(session.user_id);
     const user = sessionUserShape(session.user_id, authz);
     if (!user.studio_access) return res.status(403).json({ error: 'discord_link_required' });
+
     const identityId = String(req.body?.identity_id || '');
     if (!getIdentity(identityId) || !user.allowed_identity_ids.includes(identityId)) {
       return res.status(403).json({ error: 'identity_not_authorized' });
     }
-    res.status(501).json({ error: 'publishing_not_configured', identity_id: identityId });
+
+    const routing = validatePublishRouting(identityId, req.body, config);
+    if (!routing.ok) return res.status(403).json({ error: routing.error });
+
+    // Webhook execution is the next backend phase. Until webhook credentials
+    // are configured, return the server-validated routing decision so the
+    // frontend/integration can be exercised without weakening authorization.
+    res.status(501).json({
+      error: 'publishing_not_configured',
+      identity_id: identityId,
+      channel_id: routing.channel_id,
+      pings: routing.pings.map((ping) => ({ key: ping.key, id: ping.id, label: ping.label })),
+      ping_everyone: routing.ping_everyone,
+      allowed_mentions: routing.allowed_mentions
+    });
   } catch (error) { next(error); }
 });
 
