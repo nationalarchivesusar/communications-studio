@@ -43,7 +43,7 @@ async function download(id, source) {
 (async () => {
   await fs.mkdir(outputDir, { recursive: true });
   const entries = Object.entries(sources);
-  if (entries.length !== 40) throw new Error(`Expected 40 publishing identity logos, found ${entries.length}`);
+  if (entries.length !== 41) throw new Error(`Expected 41 publishing identity logos, found ${entries.length}`);
   for (const [id, source] of entries) await download(id, source);
 })().catch((error) => {
   console.error(error);
