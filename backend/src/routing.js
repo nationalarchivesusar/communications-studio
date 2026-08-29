@@ -13,6 +13,13 @@ const PING_LABELS = Object.freeze({
   judicial: '@Judicial Ping'
 });
 
+export const CHANNEL_ACCESS_ROLES = Object.freeze({
+  executive: '1155312730895548426',
+  white_house: '1155312788554661969',
+  legislative: '1155312851926401154',
+  judicial: '1155312918867493006'
+});
+
 const ALL_BRANCH_CHANNELS = Object.freeze(['white_house', 'executive', 'legislative', 'judicial']);
 const ALL_BRANCH_PINGS = Object.freeze(['executive', 'white_house', 'legislative', 'judicial']);
 
@@ -21,31 +28,35 @@ const OVP = new Set(['ovp']);
 const LEGISLATIVE = new Set(['house', 'senate', 'uscp', 'uscp_oig']);
 const JUDICIAL = new Set(['judiciary', 'supreme_court']);
 
+function discordRoleSet(discordRoleIds = []) {
+  return new Set((Array.isArray(discordRoleIds) ? discordRoleIds : [...discordRoleIds || []]).map(String));
+}
+
+export function requiredAccessRoleForChannelKey(channelKey) {
+  return CHANNEL_ACCESS_ROLES[String(channelKey || '')] || null;
+}
+
+function channelKeyAllowed(channelKey, discordRoleIds = null) {
+  if (discordRoleIds === null || discordRoleIds === undefined) return true;
+  const requiredRole = requiredAccessRoleForChannelKey(channelKey);
+  return !requiredRole || discordRoleSet(discordRoleIds).has(requiredRole);
+}
+
 export function routingPolicy(identityId) {
   const id = String(identityId || '');
 
   if (id === 'fec') {
-    return {
-      channelKeys: ['fec'],
-      pingKeys: [...ALL_BRANCH_PINGS],
-      allowEveryone: true
-    };
+    return { channelKeys: ['fec'], pingKeys: [...ALL_BRANCH_PINGS], allowEveryone: true };
   }
 
   if (id === 'nara') {
-    return {
-      channelKeys: [...ALL_BRANCH_CHANNELS],
-      pingKeys: [...ALL_BRANCH_PINGS],
-      allowEveryone: false
-    };
+    return { channelKeys: [...ALL_BRANCH_CHANNELS], pingKeys: [...ALL_BRANCH_PINGS], allowEveryone: false };
   }
 
   if (WHITE_HOUSE.has(id)) {
     return { channelKeys: ['white_house'], pingKeys: ['white_house'], allowEveryone: false };
   }
 
-  // The Vice President publishes in the White House channel, but uses the
-  // government-wide Executive notification role rather than White House Ping.
   if (OVP.has(id)) {
     return { channelKeys: ['white_house'], pingKeys: ['executive'], allowEveryone: false };
   }
@@ -58,14 +69,13 @@ export function routingPolicy(identityId) {
     return { channelKeys: ['judicial'], pingKeys: ['judicial'], allowEveryone: false };
   }
 
-  // DOJ, FBI, USMS, MPD, DHS, DCFEMS, State, Defense, DCNG, the military
-  // services, intelligence agencies, etc. publish through the executive feed.
   return { channelKeys: ['executive'], pingKeys: ['executive'], allowEveryone: false };
 }
 
-export function publicRouting(identityId, config) {
+export function publicRouting(identityId, config, discordRoleIds = null) {
   const policy = routingPolicy(identityId);
   const channels = policy.channelKeys
+    .filter((key) => channelKeyAllowed(key, discordRoleIds))
     .map((key) => ({ key, id: String(config.channels?.[key] || ''), label: CHANNEL_LABELS[key] }))
     .filter((item) => item.id);
   const pingOptions = policy.pingKeys
@@ -80,18 +90,33 @@ export function publicRouting(identityId, config) {
   };
 }
 
-export function enrichIdentityRouting(identity, config) {
-  return { ...identity, ...publicRouting(identity.id, config) };
+export function enrichIdentityRouting(identity, config, discordRoleIds = null) {
+  return { ...identity, ...publicRouting(identity.id, config, discordRoleIds) };
 }
 
-export function validatePublishRouting(identityId, request, config) {
-  const publicPolicy = publicRouting(identityId, config);
+export function hasPublishChannelAccess(identityId, config, discordRoleIds = []) {
+  return publicRouting(identityId, config, discordRoleIds).channels.length > 0;
+}
+
+export function validatePublishRouting(identityId, request, config, discordRoleIds = null) {
+  const policy = routingPolicy(identityId);
   const channelId = String(request?.channel_id || '');
-  const allowedChannelIds = new Set(publicPolicy.channels.map((channel) => channel.id));
-  if (!channelId || !allowedChannelIds.has(channelId)) {
+  const configuredChannels = policy.channelKeys
+    .map((key) => ({ key, id: String(config.channels?.[key] || '') }))
+    .filter((item) => item.id);
+  const selectedChannel = configuredChannels.find((channel) => channel.id === channelId) || null;
+  if (!selectedChannel) {
     return { ok: false, error: 'channel_not_authorized' };
   }
 
+  if (discordRoleIds !== null && discordRoleIds !== undefined) {
+    const requiredRoleId = requiredAccessRoleForChannelKey(selectedChannel.key);
+    if (requiredRoleId && !discordRoleSet(discordRoleIds).has(requiredRoleId)) {
+      return { ok: false, error: 'discord_channel_access_role_required', required_role_id: requiredRoleId };
+    }
+  }
+
+  const publicPolicy = publicRouting(identityId, config, discordRoleIds);
   const requestedKeys = Array.isArray(request?.ping_keys) ? request.ping_keys.map(String) : [];
   const uniquePingKeys = [...new Set(requestedKeys)];
   const allowedPingKeys = new Set(publicPolicy.ping_options.map((option) => option.key));
