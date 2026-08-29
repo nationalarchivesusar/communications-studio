@@ -9,19 +9,36 @@ const sourcePath = path.join(__dirname, "identity-logo-sources.json");
 const outputDir = path.join(root, "assets", "identity-logos");
 const sources = require(sourcePath);
 const userAgent = "USAR-Communications-Studio/1.0 (publishing identity asset sync)";
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function sourceUrl(source) {
   if (/^https:\/\//i.test(String(source || ""))) return String(source);
   return `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(source)}?width=768`;
 }
 
-async function download(id, source) {
+async function fetchImage(id, source) {
   const url = sourceUrl(source);
-  const response = await fetch(url, {
-    redirect: "follow",
-    headers: { "User-Agent": userAgent, Accept: "image/*,*/*;q=0.8" }
-  });
-  if (!response.ok) throw new Error(`${id}: source returned HTTP ${response.status} (${source})`);
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
+    const response = await fetch(url, {
+      redirect: "follow",
+      headers: { "User-Agent": userAgent, Accept: "image/*,*/*;q=0.8" }
+    });
+    if (response.ok) return response;
+    if (![429, 500, 502, 503, 504].includes(response.status) || attempt === 6) {
+      throw new Error(`${id}: source returned HTTP ${response.status} (${source})`);
+    }
+    const retryAfter = Number.parseInt(response.headers.get("retry-after") || "", 10);
+    const delay = Number.isFinite(retryAfter)
+      ? Math.max(1000, retryAfter * 1000)
+      : Math.min(30_000, 1500 * (2 ** (attempt - 1)));
+    console.warn(`${id}: HTTP ${response.status}; retrying in ${delay}ms (attempt ${attempt}/6)`);
+    await sleep(delay);
+  }
+  throw new Error(`${id}: source download retries exhausted (${source})`);
+}
+
+async function download(id, source) {
+  const response = await fetchImage(id, source);
   const raw = Buffer.from(await response.arrayBuffer());
   if (!raw.length || raw.length > 12 * 1024 * 1024) throw new Error(`${id}: invalid source size ${raw.length}`);
 
@@ -44,7 +61,10 @@ async function download(id, source) {
   await fs.mkdir(outputDir, { recursive: true });
   const entries = Object.entries(sources);
   if (entries.length !== 41) throw new Error(`Expected 41 publishing identity logos, found ${entries.length}`);
-  for (const [id, source] of entries) await download(id, source);
+  for (const [id, source] of entries) {
+    await download(id, source);
+    await sleep(750);
+  }
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
