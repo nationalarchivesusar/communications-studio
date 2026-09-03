@@ -23,10 +23,19 @@ function authFlowStage() {
   catch { return ""; }
 }
 
+function clearAuthFlow() {
+  setAuthFlowStage("");
+  const url = new URL(location.href);
+  if (!url.searchParams.has("auth_flow")) return;
+  url.searchParams.delete("auth_flow");
+  history.replaceState(null, "", url.toString());
+}
+
 function renderLogin() {
-  const hasDiscord = Boolean(session?.discord || session?.user?.discord);
-  const provider = hasDiscord ? "roblox" : "discord";
-  const href = studioAuthHref(provider, hasDiscord ? "" : "discord");
+  // Discord guild membership is the Studio access boundary. Roblox is an
+  // optional linked identity provider used only for identities whose backend
+  // policy requires Roblox rank evidence.
+  const href = studioAuthHref("discord", "discord");
 
   app.innerHTML = `
     <main class="login-shell federal-login">
@@ -56,7 +65,7 @@ function renderLogin() {
           <div class="login-panel">
             <div class="section-kicker">Access Communications Studio</div>
             <h2>Sign in</h2>
-            <p class="lede">Sign in to continue.</p>
+            <p class="lede">Sign in with Discord to continue.</p>
 
             <a class="auth-button" href="${esc(href)}" style="position:relative;z-index:10;pointer-events:auto;text-decoration:none;cursor:pointer">
               <span class="auth-icon">${icon("external")}</span>
@@ -79,3 +88,20 @@ function renderLogin() {
       <footer class="login-footer">Maintained by the National Archives and Records Administration · ${esc(CONFIG.guildName)}</footer>
     </main>`;
 }
+
+/*
+ * Keep Roblox linkage available without making it a prerequisite for Studio
+ * access. The backend remains authoritative about which identities actually
+ * require Roblox evidence at publish time.
+ */
+const renderTopbarWithoutRobloxLink = renderTopbar;
+renderTopbar = function renderTopbarWithOptionalRobloxLink() {
+  const html = renderTopbarWithoutRobloxLink();
+  const hasDiscord = Boolean(session?.discord || session?.user?.discord);
+  const hasRoblox = Boolean(session?.roblox || session?.user?.roblox);
+  if (!CONFIG.apiBase || !hasDiscord || hasRoblox) return html;
+
+  const marker = '<div class="user-chip">';
+  const link = `<button class="toolbar-btn" data-action="auth-roblox" title="Link Roblox for Roblox-gated publishing identities"><span>${icon("external")}</span><span class="label">Link Roblox</span></button>`;
+  return html.replace(marker, `${link}${marker}`);
+};
