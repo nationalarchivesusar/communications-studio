@@ -3,12 +3,16 @@ name: Frontend auth checks
 on:
   pull_request:
     paths:
+      - 'index.html'
+      - 'config.js'
       - 'auth-ui.js'
       - 'app-13.js'
       - '.github/workflows/frontend-auth-check.yml'
   push:
     branches: [main]
     paths:
+      - 'index.html'
+      - 'config.js'
       - 'auth-ui.js'
       - 'app-13.js'
       - '.github/workflows/frontend-auth-check.yml'
@@ -24,10 +28,20 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+      - name: Parse runtime configuration
+        run: node --check config.js
       - name: Parse authentication UI
         run: node --check auth-ui.js
       - name: Parse boot/session logic
         run: node --check app-13.js
+      - name: Verify same-origin production entrypoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'location.hostname === "nationalarchivesusar.github.io"' index.html
+          grep -Fq 'https://ray-500-c60.tail6f3caa.ts.net:10000/' index.html
+          grep -Fq 'location.hostname === COMMUNICATIONS_STUDIO_BACKEND_HOST' config.js
+          grep -Fq '? location.origin' config.js
       - name: Verify auth scripts load in dependency order
         shell: bash
         run: |
