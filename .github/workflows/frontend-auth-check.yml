@@ -1,0 +1,38 @@
+name: Frontend auth checks
+
+on:
+  pull_request:
+    paths:
+      - 'auth-ui.js'
+      - 'app-13.js'
+      - '.github/workflows/frontend-auth-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'auth-ui.js'
+      - 'app-13.js'
+      - '.github/workflows/frontend-auth-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    name: Validate login JavaScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Parse authentication UI
+        run: node --check auth-ui.js
+      - name: Parse boot/session logic
+        run: node --check app-13.js
+      - name: Verify auth scripts load in dependency order
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth_line=$(grep -n 'src="./auth-ui.js' index.html | cut -d: -f1)
+          app13_line=$(grep -n 'src="./app-13.js' index.html | cut -d: -f1)
+          test -n "$auth_line" -a -n "$app13_line"
+          test "$auth_line" -lt "$app13_line"
