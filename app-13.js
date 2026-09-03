@@ -33,33 +33,26 @@
     const server = await restoreServerSession();
 
     if (server) {
-      const hasDiscord = Boolean(session?.discord || session?.user?.discord);
-      const hasRoblox = Boolean(session?.roblox || session?.user?.roblox);
-      const stage = authFlowStage();
-
-      if (hasDiscord && hasRoblox) {
-        setAuthFlowStage("");
+      // The backend is authoritative for Studio access. A Discord-authenticated
+      // guild member may enter even without a linked Roblox account; Roblox is
+      // only required for publishing identities whose backend policy needs it.
+      if (session?.user?.studio_access) {
+        clearAuthFlow();
         state = loadDraft();
         if (ui.previewTheme) state.preview.theme = ui.previewTheme;
         renderStudio();
         return;
       }
 
-      if (stage === "discord-pending" && hasDiscord && !hasRoblox) {
-        setAuthFlowStage("roblox-pending");
-        auth("roblox");
-        return;
-      }
-
-      if (stage === "roblox-pending" && !hasRoblox) {
-        setAuthFlowStage("roblox-needed");
-      }
-
+      // A valid application session that does not currently satisfy the Discord
+      // guild access rule remains denied. Re-authentication can refresh that
+      // membership; linking Roblox cannot bypass this decision.
+      clearAuthFlow();
       renderLogin();
       return;
     }
 
-    if (["discord-pending", "roblox-pending"].includes(authFlowStage())) setAuthFlowStage("");
+    if (["discord-pending", "roblox-pending"].includes(authFlowStage())) clearAuthFlow();
 
     const preview = restorePreviewSession();
     if (preview) {
