@@ -5,8 +5,8 @@
  * session cookies are first-party. GitHub Pages remains a compatibility entry
  * point and is redirected to that host by index.html.
  */
-const COMMUNICATIONS_STUDIO_PRODUCTION_API = "https://ray-500-c60.tail6f3caa.ts.net:10000";
-const COMMUNICATIONS_STUDIO_BACKEND_HOST = "ray-500-c60.tail6f3caa.ts.net";
+const COMMUNICATIONS_STUDIO_PRODUCTION_API = "https://ray-optiplex.tail6f3caa.ts.net:10000";
+const COMMUNICATIONS_STUDIO_BACKEND_HOST = "ray-optiplex.tail6f3caa.ts.net";
 
 window.COMMUNICATIONS_STUDIO_CONFIG = Object.freeze({
   apiBase: location.hostname === COMMUNICATIONS_STUDIO_BACKEND_HOST
