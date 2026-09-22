@@ -2,16 +2,82 @@
 
 let studioPublishRequestInFlight = false;
 
+function studioBodyMentions() {
+  const roles = new Set();
+  const users = new Set();
+  let everyone = false;
+  for (const child of state?.containers?.[0]?.children || []) {
+    const texts = child.kind === "text" ? [child.content] : child.kind === "section" ? child.texts : [];
+    for (const content of Array.isArray(texts) ? texts : []) {
+      const value = String(content || "");
+      for (const match of value.matchAll(/<@&([0-9]{5,25})>/g)) roles.add(match[1]);
+      for (const match of value.matchAll(/<@!?([0-9]{5,25})>/g)) users.add(match[1]);
+      if (/(^|[^\w])@(everyone|here)\b/i.test(value)) everyone = true;
+    }
+  }
+  return { roles: [...roles], users: [...users], everyone };
+}
+
+function studioBodyRoleButtons(sectionIndex = "") {
+  const options = currentPublishingIdentity()?.pingOptions || [];
+  if (!options.length) return "";
+  return `<div class="field-help">Insert an approved role mention here: ${options.map((ping) => `<button type="button" class="add-inline-btn" style="width:auto;margin:4px 4px 0 0;padding:4px 7px" data-insert-body-role="${esc(ping.id)}" data-role-section-index="${sectionIndex}">${esc(ping.label)}</button>`).join("")}</div>`;
+}
+
+const studioTextInspectorBeforeRoleInsertion = renderTextInspector;
+renderTextInspector = function renderTextInspectorWithRoleInsertion(component) {
+  return studioTextInspectorBeforeRoleInsertion(component).replace("</textarea>", `</textarea>${studioBodyRoleButtons()}`);
+};
+
+const studioSectionInspectorBeforeRoleInsertion = renderSectionInspector;
+renderSectionInspector = function renderSectionInspectorWithRoleInsertion(component) {
+  let index = 0;
+  return studioSectionInspectorBeforeRoleInsertion(component).replace(/<\/textarea>/g, () => `</textarea>${studioBodyRoleButtons(index++)}`);
+};
+
+app.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-insert-body-role]");
+  if (!button) return;
+  const component = selectedEntity();
+  const index = button.dataset.roleSectionIndex;
+  const editor = index === ""
+    ? document.querySelector(`[data-text-editor="${CSS.escape(component?.id || "")}"]`)
+    : document.querySelector(`[data-section-text-index="${index}"]`);
+  if (!editor || (component?.kind !== "text" && component?.kind !== "section")) return;
+  const insertion = `<@&${button.dataset.insertBodyRole}>`;
+  const start = editor.selectionStart;
+  const updated = editor.value.slice(0, start) + insertion + editor.value.slice(editor.selectionEnd);
+  mutate(() => {
+    if (component.kind === "text") component.content = updated;
+    else component.texts[Number(index)] = updated;
+  });
+});
+
+const studioDiscordPayloadBeforeBodyMentions = toDiscordPayload;
+toDiscordPayload = function toDiscordPayloadWithBodyMentions() {
+  const payload = studioDiscordPayloadBeforeBodyMentions();
+  const identity = currentPublishingIdentity();
+  const body = studioBodyMentions();
+  const approvedRoles = new Set((identity?.pingOptions || []).map((ping) => ping.id));
+  payload.allowed_mentions.roles = [...new Set([...(payload.allowed_mentions.roles || []), ...body.roles.filter((id) => approvedRoles.has(id))])];
+  payload.allowed_mentions.users = [...new Set([...(payload.allowed_mentions.users || []), ...body.users])];
+  if (body.everyone && identity?.allowEveryone) payload.allowed_mentions.parse = ["everyone"];
+  return payload;
+};
+
 function studioPublishChannel(identity = currentPublishingIdentity()) {
   return (identity?.channels || []).find((channel) => String(channel.id) === String(state?.message?.channelId || "")) || identity?.channels?.[0] || null;
 }
 
 function studioPublishNotifications(identity = currentPublishingIdentity()) {
   const items = [];
-  if (state?.message?.pingEveryone) items.push("@everyone");
+  const body = studioBodyMentions();
+  if (state?.message?.pingEveryone || body.everyone) items.push("@everyone/@here");
   for (const ping of studioRolePings(identity)) items.push(ping.label);
   for (const user of studioUserPings()) items.push(`@${user.display_name || user.username || "user"}`);
-  return items;
+  for (const id of body.roles) items.push((identity?.pingOptions || []).find((ping) => ping.id === id)?.label || `<@&${id}>`);
+  for (const id of body.users) items.push(`<@${id}>`);
+  return [...new Set(items)];
 }
 
 function studioPublishErrorLabel(code) {
@@ -61,6 +127,16 @@ function studioOpenPublishConfirmation() {
     toast(blocking.text || "Fix the blocking issue before publishing.", "error");
     selection = { kind: "message" };
     renderStudio();
+    return;
+  }
+  const identity = currentPublishingIdentity();
+  const body = studioBodyMentions();
+  if (body.roles.some((id) => !(identity?.pingOptions || []).some((ping) => ping.id === id)) || (body.everyone && !identity?.allowEveryone)) {
+    toast("The container contains a notification this office is not authorized to send.", "error");
+    return;
+  }
+  if (new Set([...studioUserPings().map((user) => user.id), ...body.users]).size > STUDIO_MAX_USER_PINGS) {
+    toast(`No more than ${STUDIO_MAX_USER_PINGS} individual users may be mentioned.`, "error");
     return;
   }
   modal = { type: "publish-confirm" };
