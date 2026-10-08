@@ -1,6 +1,76 @@
 "use strict";
 
 /*
+ * GitHub Pages and the production API intentionally live on different sites.
+ * Modern browsers may block the API's session cookie when the Studio calls it
+ * from GitHub Pages, even though the OAuth callback itself succeeded. The
+ * backend therefore returns a newly-created application session once in the
+ * URL fragment. Fragments are never sent to GitHub; capture it immediately,
+ * remove it from the address bar, and attach it as a Bearer credential only to
+ * Communications Studio API requests.
+ */
+const STUDIO_API_SESSION_KEY = "usar-communications-studio:v1:api-session";
+
+function studioApiSessionToken() {
+  try { return localStorage.getItem(STUDIO_API_SESSION_KEY) || ""; }
+  catch { return ""; }
+}
+
+function clearStudioApiSessionToken() {
+  try { localStorage.removeItem(STUDIO_API_SESSION_KEY); }
+  catch { /* no-op */ }
+}
+
+(function captureStudioApiSessionHandoff() {
+  const prefix = "#cs_auth=";
+  if (!location.hash.startsWith(prefix)) return;
+
+  try {
+    const token = decodeURIComponent(location.hash.slice(prefix.length));
+    if (/^[A-Za-z0-9_-]{20,}$/.test(token)) {
+      localStorage.setItem(STUDIO_API_SESSION_KEY, token);
+    }
+  } catch { /* no-op */ }
+
+  history.replaceState(null, "", `${location.pathname}${location.search}`);
+})();
+
+(function installStudioAuthenticatedFetch() {
+  if (!CONFIG.apiBase) return;
+
+  const originalFetch = window.fetch.bind(window);
+  const apiOrigin = new URL(CONFIG.apiBase, location.href).origin;
+
+  window.fetch = async function studioAuthenticatedFetch(input, init) {
+    let requestUrl;
+    try {
+      const rawUrl = typeof input === "string" || input instanceof URL ? input : input.url;
+      requestUrl = new URL(rawUrl, location.href);
+    } catch {
+      return originalFetch(input, init);
+    }
+
+    let nextInit = init;
+    if (requestUrl.origin === apiOrigin) {
+      const token = studioApiSessionToken();
+      if (token) {
+        nextInit = { ...(init || {}) };
+        const inheritedHeaders = input instanceof Request ? input.headers : undefined;
+        const headers = new Headers(nextInit.headers || inheritedHeaders);
+        if (!headers.has("Authorization")) headers.set("Authorization", `Bearer ${token}`);
+        nextInit.headers = headers;
+      }
+    }
+
+    const response = await originalFetch(input, nextInit);
+    if (requestUrl.origin === apiOrigin && requestUrl.pathname === CONFIG.logoutPath && response.ok) {
+      clearStudioApiSessionToken();
+    }
+    return response;
+  };
+})();
+
+/*
  * Unified production sign-in UI.
  *
  * The primary control is deliberately a normal hyperlink rather than a
